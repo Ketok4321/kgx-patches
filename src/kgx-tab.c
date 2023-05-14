@@ -72,6 +72,7 @@ struct _KgxTabPrivate {
   /* Remote/root states */
   GHashTable           *root;
   GHashTable           *remote;
+  GHashTable           *container;
   GHashTable           *children;
 
   char                 *notification_id;
@@ -137,6 +138,7 @@ kgx_tab_dispose (GObject *object)
 
   g_clear_pointer (&priv->root, g_hash_table_unref);
   g_clear_pointer (&priv->remote, g_hash_table_unref);
+  g_clear_pointer (&priv->container, g_hash_table_unref);
   g_clear_pointer (&priv->children, g_hash_table_unref);
 
   g_clear_pointer (&priv->last_search, g_free);
@@ -291,6 +293,12 @@ set_status (KgxTab    *self,
     gtk_widget_add_css_class (GTK_WIDGET (self), KGX_WINDOW_STYLE_ROOT);
   } else {
     gtk_widget_remove_css_class (GTK_WIDGET (self), KGX_WINDOW_STYLE_ROOT);
+  }
+
+  if (status & KGX_CONTAINER) {
+    gtk_widget_add_css_class (GTK_WIDGET (self), KGX_WINDOW_STYLE_CONTAINER);
+  } else {
+    gtk_widget_remove_css_class (GTK_WIDGET (self), KGX_WINDOW_STYLE_CONTAINER);
   }
 
   g_object_notify_by_pspec (G_OBJECT (self), pspecs[PROP_TAB_STATUS]);
@@ -733,6 +741,7 @@ kgx_tab_init (KgxTab *self)
 
   priv->root = g_hash_table_new (g_direct_hash, g_direct_equal);
   priv->remote = g_hash_table_new (g_direct_hash, g_direct_equal);
+  priv->container = g_hash_table_new (g_direct_hash, g_direct_equal);
   priv->children = g_hash_table_new_full (g_direct_hash,
                                           g_direct_equal,
                                           NULL,
@@ -891,6 +900,7 @@ kgx_tab_push_child (KgxTab     *self,
   GPid pid = 0;
   GStrv argv;
   g_autofree char *program = NULL;
+  gboolean is_script = FALSE;
   KgxStatus new_status = KGX_NONE;
   KgxTabPrivate *priv;
 
@@ -903,6 +913,12 @@ kgx_tab_push_child (KgxTab     *self,
 
   if (G_LIKELY (argv[0] != NULL)) {
     program = g_path_get_basename (argv[0]);
+
+    if (G_UNLIKELY (g_strcmp0 (program, "sh") == 0 && argv[1] != NULL)) {
+      is_script = TRUE;
+      g_free (program);
+      program = g_path_get_basename (argv[1]);
+    }
   }
 
   if (G_UNLIKELY (g_strcmp0 (program, "ssh") == 0 ||
@@ -923,6 +939,10 @@ kgx_tab_push_child (KgxTab     *self,
 
   if (G_UNLIKELY (kgx_process_get_is_root (process))) {
     new_status |= push_type (priv->root, pid, NULL, KGX_PRIVILEGED);
+  }
+
+  if (G_UNLIKELY (is_script && g_strcmp0 (program, "distrobox") == 0)) {
+    new_status |= push_type (priv->container, pid, NULL, KGX_CONTAINER);
   }
 
   push_type (priv->children, pid, process, KGX_NONE);
@@ -977,6 +997,7 @@ kgx_tab_pop_child (KgxTab     *self,
 
   new_status |= pop_type (priv->remote, pid, KGX_REMOTE);
   new_status |= pop_type (priv->root, pid, KGX_PRIVILEGED);
+  new_status |= pop_type (priv->container, pid, KGX_CONTAINER);
   pop_type (priv->children, pid, KGX_NONE);
 
   set_status (self, new_status);

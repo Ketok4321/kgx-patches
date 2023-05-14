@@ -256,6 +256,12 @@ status_changed (GObject *object, GParamSpec *pspec, gpointer data)
   } else {
     gtk_widget_remove_css_class (GTK_WIDGET (self), KGX_WINDOW_STYLE_ROOT);
   }
+
+  if (status & KGX_CONTAINER) {
+    gtk_widget_add_css_class (GTK_WIDGET (self), KGX_WINDOW_STYLE_CONTAINER);
+  } else {
+    gtk_widget_remove_css_class (GTK_WIDGET (self), KGX_WINDOW_STYLE_CONTAINER);
+  }
 }
 
 

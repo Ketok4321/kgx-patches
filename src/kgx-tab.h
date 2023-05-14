@@ -33,6 +33,7 @@ G_BEGIN_DECLS
  * @KGX_REMOTE: The #KgxTab is connected to a "remote" session
  * @KGX_PRIVILEGED: The #KgxTab is running as someone other than the current
  *                  user
+ * @KGX_CONTAINER: The #KgxTab is running in a container
  *
  * Indicates the status of the session the #KgxTab represents
  *
@@ -42,6 +43,7 @@ typedef enum /*< flags,prefix=KGX >*/ {
   KGX_NONE = 0,              /*< nick=none >*/
   KGX_REMOTE = (1 << 0),     /*< nick=remote >*/
   KGX_PRIVILEGED = (1 << 1), /*< nick=privileged >*/
+  KGX_CONTAINER = (1 << 2),  /*< nick=container >*/
 } KgxStatus;
 
 
