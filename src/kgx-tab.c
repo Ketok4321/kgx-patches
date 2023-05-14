@@ -941,8 +941,16 @@ kgx_tab_push_child (KgxTab     *self,
     new_status |= push_type (priv->root, pid, NULL, KGX_PRIVILEGED);
   }
 
-  if (G_UNLIKELY (is_script && g_strcmp0 (program, "distrobox") == 0)) {
-    new_status |= push_type (priv->container, pid, NULL, KGX_CONTAINER);
+  if (G_UNLIKELY (is_script && g_strcmp0 (program, "distrobox" == 0))) {
+    if (G_LIKELY (g_strcmp0 (argv[2], "enter") == 0)) {
+      new_status |= push_type (priv->container, pid, NULL, KGX_CONTAINER);
+    }
+  }
+
+  if (G_UNLIKELY (g_strcmp0 (program, "toolbox") == 0)) {
+    if (G_LIKELY (g_strcmp0 (argv[1], "enter") == 0)) {
+      new_status |= push_type (priv->container, pid, NULL, KGX_CONTAINER);
+    }
   }
 
   push_type (priv->children, pid, process, KGX_NONE);
