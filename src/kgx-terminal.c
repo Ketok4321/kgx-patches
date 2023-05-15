@@ -897,43 +897,14 @@ void
 kgx_terminal_accept_paste (KgxTerminal *self,
                            const char  *text)
 {
-  g_autofree char *striped = g_strchug (g_strdup (text));
   g_autoptr (PasteData) paste = g_new0 (PasteData, 1);
-  gsize len;
 
   if (!text || !text[0]) {
     return;
   }
 
-  len = strlen (text);
-
   g_set_weak_pointer (&paste->dest, self);
   paste->text = g_strdup (text);
 
-  if (g_strstr_len (striped, len, "sudo") != NULL &&
-      g_strstr_len (striped, len, "\n") != NULL) {
-    GtkWidget *dlg = adw_message_dialog_new (GTK_WINDOW (gtk_widget_get_root (GTK_WIDGET (self))),
-                                             _("You are pasting a command that runs as an administrator"),
-                                             NULL);
-    adw_message_dialog_format_body (ADW_MESSAGE_DIALOG (dlg),
-                                    // TRANSLATORS: %s is the command being pasted
-                                    _("Make sure you know what the command does:\n%s"),
-                                    text);
-    adw_message_dialog_add_responses (ADW_MESSAGE_DIALOG (dlg),
-                                      "cancel", _("_Cancel"),
-                                      "paste", _("_Paste"),
-                                      NULL);
-    adw_message_dialog_set_response_appearance (ADW_MESSAGE_DIALOG (dlg),
-                                                "paste",
-                                                ADW_RESPONSE_DESTRUCTIVE);
-
-    g_signal_connect_swapped (dlg,
-                              "response::paste",
-                              G_CALLBACK (paste_response),
-                              g_steal_pointer (&paste));
-
-    gtk_window_present (GTK_WINDOW (dlg));
-  } else {
-    paste_response (g_steal_pointer (&paste));
-  }
+  paste_response (g_steal_pointer (&paste));
 }
